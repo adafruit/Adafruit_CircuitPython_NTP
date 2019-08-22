@@ -1,9 +1,9 @@
 import time
 import board
 import busio
-from adafruit_ntp import NTP
 from digitalio import DigitalInOut
 from adafruit_esp32spi import adafruit_esp32spi
+from adafruit_ntp import NTP
 
 # If you are using a board with pre-defined ESP32 Pins:
 esp32_cs = DigitalInOut(board.ESP_CS)
