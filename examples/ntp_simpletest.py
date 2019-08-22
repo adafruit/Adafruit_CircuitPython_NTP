@@ -36,7 +36,7 @@ ntp.set_time()
 current_time = time.time()
 print("Seconds since Jan 1, 1970: {} seconds".format(current_time))
 
-# Convert the time in seconds to a struct_time
+# Convert the current time in seconds since Jan 1, 1970 to a struct_time
 now = time.localtime(current_time)
 print(now)
 

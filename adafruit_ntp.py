@@ -59,8 +59,8 @@ class NTP:
             raise TypeError("Provided esp is not an ESP_SPIcontrol object")
 
     def set_time(self):
-        """Fetches and sets the UTC time of
-        this microcontroller.
+        """Fetches and sets the microcontroller's current time
+        in seconds since since Jan 1, 1970.
         """
         now = self._esp.get_time()
         now = time.localtime(now[0])
