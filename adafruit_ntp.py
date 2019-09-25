@@ -49,19 +49,24 @@ class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
     This module does not handle daylight savings or local time.
 
-    :param adafruit_esp32spi esp: ESP32SPI Module
+    :param adafruit_esp32spi esp: ESP32SPI object.
     """
     def __init__(self, esp):
         # Verify ESP32SPI module
         if "ESP_SPIcontrol" in str(type(esp)):
             self._esp = esp
         else:
-            raise TypeError("Provided esp is not an ESP_SPIcontrol object")
+            raise TypeError("Provided object is not an ESP_SPIcontrol object.")
+        self.valid_time = False
 
     def set_time(self):
         """Fetches and sets the microcontroller's current time
         in seconds since since Jan 1, 1970.
         """
-        now = self._esp.get_time()
-        now = time.localtime(now[0])
-        rtc.RTC().datetime = now
+        try:
+            now = self._esp.get_time()
+            now = time.localtime(now[0])
+            rtc.RTC().datetime = now
+            self.valid_time = True
+        except ValueError:
+            return
