@@ -30,7 +30,11 @@ while not esp.is_connected:
 ntp = NTP(esp)
 
 # Fetch and set the microcontroller's current UTC time
-ntp.set_time()
+# keep retrying until a valid time is returned
+while not ntp.valid_time:
+    ntp.set_time()
+    print("Failed to obtain time, retrying in 5 seconds...")
+    time.sleep(5)
 
 # Get the current time in seconds since Jan 1, 1970
 current_time = time.time()
