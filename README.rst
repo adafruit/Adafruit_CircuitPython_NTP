@@ -65,13 +65,6 @@ Usage Example
     from adafruit_esp32spi import adafruit_esp32spi
     from adafruit_ntp import NTP
 
-    import time
-    import board
-    import busio
-    from digitalio import DigitalInOut
-    from adafruit_esp32spi import adafruit_esp32spi
-    from adafruit_ntp import NTP
-
     # If you are using a board with pre-defined ESP32 Pins:
     esp32_cs = DigitalInOut(board.ESP_CS)
     esp32_ready = DigitalInOut(board.ESP_BUSY)
