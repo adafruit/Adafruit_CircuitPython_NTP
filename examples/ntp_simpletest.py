@@ -45,6 +45,8 @@ now = time.localtime(current_time)
 print(now)
 
 # Pretty-parse the struct_time
-print("It is currently {}/{}/{} at {}:{}:{} UTC".format(
-    now.tm_mon, now.tm_mday, now.tm_year,
-    now.tm_hour,now.tm_min, now.tm_sec))
+print(
+    "It is currently {}/{}/{} at {}:{}:{} UTC".format(
+        now.tm_mon, now.tm_mday, now.tm_year, now.tm_hour, now.tm_min, now.tm_sec
+    )
+)
