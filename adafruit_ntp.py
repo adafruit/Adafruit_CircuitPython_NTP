@@ -45,12 +45,14 @@ import rtc
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
+
 class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
     This module does not handle daylight savings or local time.
 
     :param adafruit_esp32spi esp: ESP32SPI object.
     """
+
     def __init__(self, esp):
         # Verify ESP32SPI module
         if "ESP_SPIcontrol" in str(type(esp)):
