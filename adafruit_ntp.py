@@ -48,7 +48,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
 class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
-    This module does not handle daylight savings time.
+    This module does not handle daylight savings or local time.
 
     :param adafruit_esp32spi esp: ESP32SPI object.
     """
@@ -63,15 +63,15 @@ class NTP:
 
     def set_time(self, tz_offset=0):
         """Fetches and sets the microcontroller's current time
-        in seconds since since Jan 1, 1970.  Optionally offsets
-        the current time to that of the requested timezone.
-        
-        :param int tz_offset: Timezone offset from GMT in hours
+        in seconds since since Jan 1, 1970.
+
+        :param int tz_offset: Timezone offset from GMT
         """
         try:
             now = self._esp.get_time()
-            now = time.localtime(now[0]+ (tz_offset * 3600))   # 3600 seconds in an hour
+            now = time.localtime(now[0] + (tz_offset * 3600))  # 3600 seconds in an hour
             rtc.RTC().datetime = now
             self.valid_time = True
-        except ValueError:
+        except ValueError as error:
+            print(str(error))
             return
