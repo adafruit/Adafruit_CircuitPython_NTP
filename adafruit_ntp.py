@@ -61,14 +61,17 @@ class NTP:
             raise TypeError("Provided object is not an ESP_SPIcontrol object.")
         self.valid_time = False
 
-    def set_time(self):
+    def set_time(self, tz_offset=0):
         """Fetches and sets the microcontroller's current time
         in seconds since since Jan 1, 1970.
+
+        :param int tz_offset: Timezone offset from GMT
         """
         try:
             now = self._esp.get_time()
-            now = time.localtime(now[0])
+            now = time.localtime(now[0] + (tz_offset * 3600))  # 3600 seconds in an hour
             rtc.RTC().datetime = now
             self.valid_time = True
-        except ValueError:
+        except ValueError as error:
+            print(str(error))
             return
