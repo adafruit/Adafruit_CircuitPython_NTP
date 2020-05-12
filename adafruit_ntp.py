@@ -65,11 +65,13 @@ class NTP:
         """Fetches and sets the microcontroller's current time
         in seconds since since Jan 1, 1970.
 
-        :param int tz_offset: Timezone offset from GMT
+        :param int tz_offset: The offset of the local timezone,
+        in seconds west of UTC (negative in most of Western Europe,
+        positive in the US, zero in the UK).
         """
         try:
             now = self._esp.get_time()
-            now = time.localtime(now[0] + (tz_offset * 3600))  # 3600 seconds in an hour
+            now = time.localtime(now[0] + tz_offset)
             rtc.RTC().datetime = now
             self.valid_time = True
         except ValueError as error:
