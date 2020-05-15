@@ -29,7 +29,7 @@ Implementation Notes
 **Hardware:**
 **Software and Dependencies:**
 * Adafruit CircuitPython firmware for the supported boards:
-  https://github.com/adafruit/circuitpython/releases
+    https://github.com/adafruit/circuitpython/releases
 """
 import time
 import rtc
