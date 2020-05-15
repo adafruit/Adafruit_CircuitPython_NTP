@@ -69,6 +69,7 @@ class NTP:
         in seconds west of UTC (negative in most of Western Europe,
         positive in the US, zero in the UK).
         """
+        
         try:
             now = self._esp.get_time()
             now = time.localtime(now[0] + tz_offset)
