@@ -56,9 +56,7 @@ class NTP:
         """Fetches and sets the microcontroller's current time
         in seconds since since Jan 1, 1970.
         
-        :param tz_offset: The offset of the local timezone,
-        in seconds west of UTC (negative in most of Western Europe,
-        positive in the US, zero in the UK).
+        :param int tz_offset: The offset of the local timezone, in seconds west of UTC (negative in most of Western Europe, positive in the US, zero in the UK).
         """
 
         try:
