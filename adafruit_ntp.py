@@ -24,14 +24,16 @@
 ================================================================================
 
 Network Time Protocol (NTP) helper for CircuitPython
-* Author(s): Brent Rubell
+
+ * Author(s): Brent Rubell
 
 Implementation Notes
 --------------------
 **Hardware:**
 **Software and Dependencies:**
-* Adafruit CircuitPython firmware for the supported boards:
-  https://github.com/adafruit/circuitpython/releases
+
+ * Adafruit CircuitPython firmware for the supported boards:
+   https://github.com/adafruit/circuitpython/releases
 
 """
 import time
