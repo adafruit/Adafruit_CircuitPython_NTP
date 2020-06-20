@@ -22,14 +22,17 @@
 """
 `adafruit_ntp`
 ================================================================================
+
 Network Time Protocol (NTP) helper for CircuitPython
 * Author(s): Brent Rubell
+
 Implementation Notes
 --------------------
 **Hardware:**
 **Software and Dependencies:**
 * Adafruit CircuitPython firmware for the supported boards:
     https://github.com/adafruit/circuitpython/releases
+
 """
 import time
 import rtc
@@ -41,6 +44,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
     This module does not handle daylight savings or local time.
+
     :param adafruit_esp32spi esp: ESP32SPI object.
     """
 
