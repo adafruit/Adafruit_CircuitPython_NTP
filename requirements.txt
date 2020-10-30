@@ -2,5 +2,3 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-Adafruit-Blinka
-adafruit-circuitpython-esp32spi

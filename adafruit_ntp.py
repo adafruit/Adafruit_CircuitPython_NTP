@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2019 Brent Rubell for Adafruit Industries
+# SPDX-FileCopyrightText: 2022 Scott Shawcroft for Adafruit Industries
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@
 
 Network Time Protocol (NTP) helper for CircuitPython
 
- * Author(s): Brent Rubell
+ * Author(s): Scott Shawcroft
 
 Implementation Notes
 --------------------
@@ -19,52 +19,56 @@ Implementation Notes
    https://github.com/adafruit/circuitpython/releases
 
 """
+import struct
 import time
-import rtc
-
-try:
-    # Used only for typing
-    import typing  # pylint: disable=unused-import
-    from adafruit_esp32spi.adafruit_esp32spi import ESP_SPIcontrol
-except ImportError:
-    pass
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
+NTP_TO_UNIX_EPOCH = 2208988800  # 1970-01-01 00:00:00
 
 class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
-    This module does not handle daylight savings or local time.
-
-    :param adafruit_esp32spi esp: ESP32SPI object.
-    :param bool debug: Set to True to output set_time() failures to console
+    This module does not handle daylight savings or local time. It simply requests
+    UTC from a NTP server.
     """
 
-    def __init__(self, esp: ESP_SPIcontrol, debug: bool = False) -> None:
-        # Verify ESP32SPI module
-        if "ESP_SPIcontrol" in str(type(esp)):
-            self._esp = esp
-        else:
-            raise TypeError("Provided object is not an ESP_SPIcontrol object.")
-        self.valid_time = False
-        self.debug = debug
-
-    def set_time(self, tz_offset: int = 0) -> None:
-        """Fetches and sets the microcontroller's current time
-        in seconds since since Jan 1, 1970.
-
-        :param int tz_offset: The offset of the local timezone,
-            in seconds west of UTC (negative in most of Western Europe,
-            positive in the US, zero in the UK).
+    def __init__(self, socketpool, *, server: str="0.adafruit.pool.ntp.org", port: int = 123, tz_offset: int = 0) -> None:
         """
+        :param object socketpool: A socket provider such as CPython's `socket` module.
+        :param str server: The domain of the ntp server to query.
+        :param int port: The port of the ntp server to query.
+        :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
+            CircuitPython. CPython will determine timezone automatically and adjust (so don't use this.)
+            For example, Pacific daylight savings time is -7.
+        """
+        self._pool = socketpool
+        self._server = server
+        self._port = port
+        self._packet = bytearray(48)
+        self._tz_offset = tz_offset * 60 * 60
 
-        try:
-            now = self._esp.get_time()
-            now = time.localtime(now[0] + tz_offset)
-            rtc.RTC().datetime = now
-            self.valid_time = True
-        except ValueError as error:
-            if self.debug:
-                print(str(error))
-            return
+        # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
+        # responses.
+        self._monotonic_start = 0
+
+        self.next_sync = 0
+
+    @property
+    def datetime(self) -> time.struct_time:
+        if time.monotonic_ns() > self.next_sync:
+            self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
+            for i in range(1, len(self._packet)):
+                self._packet[i] = 0
+            with self._pool.socket(self._pool.AF_INET, self._pool.SOCK_DGRAM) as sock:
+                sock.sendto(self._packet, (self._server, self._port))
+                size, address = sock.recvfrom_into(self._packet)
+                # Get the time in the context to minimize the difference between it and receiving
+                # the packet.
+                destination = time.monotonic_ns()
+            poll = struct.unpack_from("!B", self._packet, offset=2)[0]
+            self.next_sync = destination + (2 ** poll) * 1_000_000_000
+            seconds = struct.unpack_from("!I", self._packet, offset=len(self._packet) - 8)[0]
+            self._monotonic_start = seconds + self._tz_offset - NTP_TO_UNIX_EPOCH - (destination // 1_000_000_000)
+
+        return time.localtime(time.monotonic_ns() // 1_000_000_000 + self._monotonic_start)
