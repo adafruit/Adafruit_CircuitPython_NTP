@@ -48,15 +48,17 @@ class NTP:
     This module does not handle daylight savings or local time.
 
     :param adafruit_esp32spi esp: ESP32SPI object.
+    :param bool debug: Set to True to output set_time() failures to console
     """
 
-    def __init__(self, esp):
+    def __init__(self, esp, debug: bool = False):
         # Verify ESP32SPI module
         if "ESP_SPIcontrol" in str(type(esp)):
             self._esp = esp
         else:
             raise TypeError("Provided object is not an ESP_SPIcontrol object.")
         self.valid_time = False
+        self.debug = debug
 
     def set_time(self, tz_offset=0):
         """Fetches and sets the microcontroller's current time
@@ -73,5 +75,6 @@ class NTP:
             rtc.RTC().datetime = now
             self.valid_time = True
         except ValueError as error:
-            print(str(error))
+            if self.debug:
+                print(str(error))
             return
