@@ -51,7 +51,7 @@ class NTP:
     :param bool debug: Set to True to output set_time() failures to console
     """
 
-    def __init__(self, esp, debug: bool = False):
+    def __init__(self, esp, debug=False):
         # Verify ESP32SPI module
         if "ESP_SPIcontrol" in str(type(esp)):
             self._esp = esp
