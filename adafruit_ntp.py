@@ -21,7 +21,13 @@ Implementation Notes
 """
 import time
 import rtc
-from adafruit_esp32spi.adafruit_esp32spi import ESP_SPIcontrol
+
+try:
+    # Used only for typing
+    import typing  # pylint: disable=unused-import
+    from adafruit_esp32spi.adafruit_esp32spi import ESP_SPIcontrol
+except ImportError:
+    pass
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
