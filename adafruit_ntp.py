@@ -22,6 +22,13 @@ Implementation Notes
 import time
 import rtc
 
+try:
+    # Used only for typing
+    import typing  # pylint: disable=unused-import
+    from adafruit_esp32spi.adafruit_esp32spi import ESP_SPIcontrol
+except ImportError:
+    pass
+
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
@@ -34,7 +41,7 @@ class NTP:
     :param bool debug: Set to True to output set_time() failures to console
     """
 
-    def __init__(self, esp, debug=False):
+    def __init__(self, esp: ESP_SPIcontrol, debug: bool = False) -> None:
         # Verify ESP32SPI module
         if "ESP_SPIcontrol" in str(type(esp)):
             self._esp = esp
@@ -43,7 +50,7 @@ class NTP:
         self.valid_time = False
         self.debug = debug
 
-    def set_time(self, tz_offset=0):
+    def set_time(self, tz_offset: int = 0) -> None:
         """Fetches and sets the microcontroller's current time
         in seconds since since Jan 1, 1970.
 
