@@ -94,6 +94,11 @@ Usage Example
     print("Seconds since Jan 1, 1970: {} seconds".format(current_time))
 
 
+Documentation
+=============
+
+API documentation for this library can be found on `Read the Docs <https://circuitpython.readthedocs.io/projects/ntp/en/latest/>`_.
+
 Contributing
 ============
 
