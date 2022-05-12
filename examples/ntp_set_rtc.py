@@ -3,11 +3,13 @@
 
 """Example demonstrating how to set the realtime clock (RTC) based on NTP time."""
 
-import adafruit_ntp
+import time
+
 import rtc
 import socketpool
-import time
 import wifi
+
+import adafruit_ntp
 
 # Get wifi details and more from a secrets.py file
 try:
