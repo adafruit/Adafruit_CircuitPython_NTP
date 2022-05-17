@@ -25,7 +25,7 @@ setup(
     name="adafruit-circuitpython-ntp",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
-    description="Network Time Protocol (NTP) helper for CircuitPython",
+    description="Network Time Protocol (NTP) helper for Python",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     # The project's main homepage.
@@ -33,7 +33,7 @@ setup(
     # Author details
     author="Adafruit Industries",
     author_email="circuitpython@adafruit.com",
-    install_requires=["Adafruit-Blinka", "adafruit-circuitpython-esp32spi"],
+    install_requires=[],
     # Choose your license
     license="MIT",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
