@@ -41,6 +41,7 @@ class NTP:
         server: str = "0.adafruit.pool.ntp.org",
         port: int = 123,
         tz_offset: int = 0,
+        socket_timeout: int = 10,
     ) -> None:
         """
         :param object socketpool: A socket provider such as CPython's `socket` module.
@@ -49,12 +50,14 @@ class NTP:
         :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
             CircuitPython. CPython will determine timezone automatically and adjust (so don't use
             this.) For example, Pacific daylight savings time is -7.
+        :param int socket_timeout: UDP socket timeout, in seconds.
         """
         self._pool = socketpool
         self._server = server
         self._port = port
         self._packet = bytearray(48)
         self._tz_offset = tz_offset * 60 * 60
+        self._socket_timeout = socket_timeout
 
         # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
         # responses.
@@ -70,6 +73,7 @@ class NTP:
             for i in range(1, len(self._packet)):
                 self._packet[i] = 0
             with self._pool.socket(self._pool.AF_INET, self._pool.SOCK_DGRAM) as sock:
+                sock.settimeout(self._socket_timeout)
                 sock.sendto(self._packet, (self._server, self._port))
                 sock.recvfrom_into(self._packet)
                 # Get the time in the context to minimize the difference between it and receiving
