@@ -22,7 +22,7 @@ Implementation Notes
 import struct
 import time
 
-__version__ = "0.0.0-auto.0"
+__version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
 NTP_TO_UNIX_EPOCH = 2208988800  # 1970-01-01 00:00:00
