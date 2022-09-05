@@ -67,7 +67,7 @@ class NTP:
 
     @property
     def datetime(self) -> time.struct_time:
-        ""Current time from NTP server. Accessing this property causes the NTP time request,
+        """Current time from NTP server. Accessing this property causes the NTP time request,
 unless there has already been a recent request. Raises OSError exception if no response
 is received within socket_timeout seconds"""
         if time.monotonic_ns() > self.next_sync:
