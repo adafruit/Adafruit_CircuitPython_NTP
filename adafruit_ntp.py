@@ -67,7 +67,9 @@ class NTP:
 
     @property
     def datetime(self) -> time.struct_time:
-        """Current time from NTP server."""
+        """Current time from NTP server. Accessing this property causes the NTP time request,
+        unless there has already been a recent request. Raises OSError exception if no response
+        is received within socket_timeout seconds"""
         if time.monotonic_ns() > self.next_sync:
             self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
             for i in range(1, len(self._packet)):
