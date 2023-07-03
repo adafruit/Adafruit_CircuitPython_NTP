@@ -40,7 +40,7 @@ class NTP:
         *,
         server: str = "0.adafruit.pool.ntp.org",
         port: int = 123,
-        tz_offset: int = 0,
+        tz_offset: float = 0,
         socket_timeout: int = 10,
     ) -> None:
         """
