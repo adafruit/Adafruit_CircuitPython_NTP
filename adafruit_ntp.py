@@ -40,7 +40,7 @@ class NTP:
         *,
         server: str = "0.adafruit.pool.ntp.org",
         port: int = 123,
-        tz_offset: int = 0,
+        tz_offset: float = 0,
         socket_timeout: int = 10,
     ) -> None:
         """
@@ -56,7 +56,7 @@ class NTP:
         self._server = server
         self._port = port
         self._packet = bytearray(48)
-        self._tz_offset = tz_offset * 60 * 60
+        self._tz_offset = int(tz_offset * 60 * 60)
         self._socket_timeout = socket_timeout
 
         # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
