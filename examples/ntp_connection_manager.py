@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-"""Print out time based on NTP."""
+"""Print out time based on NTP, using connection manager"""
 
 import time
 import adafruit_connection_manager
@@ -12,6 +12,7 @@ import adafruit_ntp
 try:
     import wifi
     import os
+
     # adjust method to get credentials as necessary...
     wifi_ssid = os.getenv("CIRCUITPY_WIFI_SSID")
     wifi_password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
@@ -21,14 +22,17 @@ try:
 except ImportError:
     import board
     from digitalio import DigitalInOut
+
     spi = board.SPI()
     try:
         from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
+
         # adjust pin for the specific board...
         eth_cs = DigitalInOut(board.D10)
         radio = WIZNET5K(spi, eth_cs)
     except ImportError:
         from adafruit_esp32spi.adafruit_esp32spi import ESP_SPIcontrol
+
         # adjust pins for the specific board...
         esp32_cs = DigitalInOut(board.ESP_CS)
         esp32_ready = DigitalInOut(board.ESP_BUSY)
