@@ -33,13 +33,7 @@ except ImportError:
         eth_cs = DigitalInOut(board.D10)
         radio = WIZNET5K(spi, eth_cs)
     except ImportError:
-        from adafruit_esp32spi.adafruit_esp32spi import ESP_SPIcontrol
-
-        # adjust pins for the specific board...
-        esp32_cs = DigitalInOut(board.ESP_CS)
-        esp32_ready = DigitalInOut(board.ESP_BUSY)
-        esp32_reset = DigitalInOut(board.ESP_RESET)
-        radio = ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
+        raise
 
 # get the socket pool from connection manager
 socket = adafruit_connection_manager.get_radio_socketpool(radio)
