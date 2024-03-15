@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2024 Justin Myers for Adafruit Industries
+# SPDX-FileCopyrightText: 2024 anecdata for Adafruit Industries
+#
+# SPDX-License-Identifier: Unlicense
+
+"""Print out time based on NTP."""
+
 import time
 import adafruit_connection_manager
 import adafruit_ntp
