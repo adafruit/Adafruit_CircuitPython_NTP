@@ -23,17 +23,13 @@ try:
 except ImportError:
     import board
     from digitalio import DigitalInOut
+    from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
 
     # adjust with busio.SPI() as necessary...
     spi = board.SPI()
-    try:
-        from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
-
-        # adjust pin for the specific board...
-        eth_cs = DigitalInOut(board.D10)
-        radio = WIZNET5K(spi, eth_cs)
-    except ImportError:
-        raise
+    # adjust pin for the specific board...
+    eth_cs = DigitalInOut(board.D10)
+    radio = WIZNET5K(spi, eth_cs)
 
 # get the socket pool from connection manager
 socket = adafruit_connection_manager.get_radio_socketpool(radio)
