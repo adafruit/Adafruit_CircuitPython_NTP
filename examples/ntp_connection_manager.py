@@ -9,6 +9,7 @@ import time
 import adafruit_connection_manager
 import adafruit_ntp
 
+# determine which radio is available
 try:
     import wifi
     import os
