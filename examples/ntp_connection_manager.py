@@ -23,6 +23,7 @@ except ImportError:
     import board
     from digitalio import DigitalInOut
 
+    # adjust with busio.SPI() as necessary...
     spi = board.SPI()
     try:
         from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
