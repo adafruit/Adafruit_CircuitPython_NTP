@@ -5,7 +5,6 @@
 
 """Print out time based on NTP, using connection manager"""
 
-import time
 import adafruit_connection_manager
 import adafruit_ntp
 
