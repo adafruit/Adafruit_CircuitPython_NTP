@@ -37,6 +37,4 @@ socket = adafruit_connection_manager.get_radio_socketpool(radio)
 # adjust tz_offset for locale...
 ntp = adafruit_ntp.NTP(socket, tz_offset=-5)
 
-while True:
-    print(ntp.datetime)
-    time.sleep(5)
+print(ntp.datetime)
