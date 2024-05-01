@@ -57,7 +57,9 @@ class NTP:
         :param int socket_timeout: UDP socket timeout, in seconds.
         """
         self._pool = socketpool
-        self._socket_address = self._pool.getaddrinfo(server, port)[0][4]
+        self._server = server
+        self._port = port
+        self._socket_address = None
         self._packet = bytearray(PACKET_SIZE)
         self._tz_offset = int(tz_offset * 60 * 60)
         self._socket_timeout = socket_timeout
@@ -74,6 +76,11 @@ class NTP:
         unless there has already been a recent request. Raises OSError exception if no response
         is received within socket_timeout seconds"""
         if time.monotonic_ns() > self.next_sync:
+            if self._socket_address is None:
+                self._socket_address = self._pool.getaddrinfo(self._server, self._port)[
+                    0
+                ][4]
+
             self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
             for i in range(1, PACKET_SIZE):
                 self._packet[i] = 0
