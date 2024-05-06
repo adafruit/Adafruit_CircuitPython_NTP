@@ -63,9 +63,6 @@ class NTP:
         self._packet = bytearray(PACKET_SIZE)
         self._tz_offset = int(tz_offset * 60 * 60)
         self._socket_timeout = socket_timeout
-        self._connect_mode = hasattr(self._pool, "_interface") and getattr(
-            self._pool._interface, "UDP_MODE", None
-        )
 
         # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
         # responses.
@@ -91,10 +88,7 @@ class NTP:
                 # Since the ESP32SPI doesn't support sendto, we are using
                 # connect + send to standardize code
                 sock.settimeout(self._socket_timeout)
-                if self._connect_mode:
-                    sock.connect(self._socket_address, self._connect_mode)
-                else:
-                    sock.connect(self._socket_address)
+                sock.connect(self._socket_address)
                 sock.send(self._packet)
                 sock.recv_into(self._packet)
                 # Get the time in the context to minimize the difference between it and receiving
