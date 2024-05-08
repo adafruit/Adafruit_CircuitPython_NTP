@@ -59,21 +59,17 @@ Usage Example
 
 .. code-block:: python
 
+    import adafruit_connection_manager
     import adafruit_ntp
-    import socketpool
+    import os
     import time
     import wifi
 
-    # Get wifi details and more from a secrets.py file
-    try:
-        from secrets import secrets
-    except ImportError:
-        print("WiFi secrets are kept in secrets.py, please add them there!")
-        raise
+    wifi_ssid = os.getenv("CIRCUITPY_WIFI_SSID")
+    wifi_password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
+    wifi.radio.connect(wifi_ssid, wifi_password)
 
-    wifi.radio.connect(secrets["ssid"], secrets["password"])
-
-    pool = socketpool.SocketPool(wifi.radio)
+    pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio)
     ntp = adafruit_ntp.NTP(pool, tz_offset=0)
 
     while True:
