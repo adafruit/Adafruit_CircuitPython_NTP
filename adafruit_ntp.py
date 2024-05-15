@@ -85,11 +85,8 @@ class NTP:
             for i in range(1, PACKET_SIZE):
                 self._packet[i] = 0
             with self._pool.socket(self._pool.AF_INET, self._pool.SOCK_DGRAM) as sock:
-                # Since the ESP32SPI doesn't support sendto, we are using
-                # connect + send to standardize code
                 sock.settimeout(self._socket_timeout)
-                sock.connect(self._socket_address)
-                sock.send(self._packet)
+                sock.sendto(self._packet, self._socket_address)
                 sock.recv_into(self._packet)
                 # Get the time in the context to minimize the difference between it and receiving
                 # the packet.
