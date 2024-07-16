@@ -102,6 +102,15 @@ class NTP:
             self.next_sync = destination + cache_offset * 1_000_000_000
             seconds = struct.unpack_from("!I", self._packet, offset=PACKET_SIZE - 8)[0]
 
+            # value should always be larger; giving a small buffer to handle jitter.
+            if (seconds + 5) < self._monotonic_start:
+                failed_offset = (self._monotonic_start - seconds) / 1_000_000_000
+                raise ArithmeticError(
+                    "need a time machine, ntp time is "
+                    + str(failed_offset)
+                    + "seconds in the past."
+                )
+
             self._monotonic_start = (
                 seconds
                 + self._tz_offset
