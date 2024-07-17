@@ -20,7 +20,7 @@ except ImportError:
 wifi.radio.connect(secrets["ssid"], secrets["password"])
 
 pool = socketpool.SocketPool(wifi.radio)
-ntp = adafruit_ntp.NTP(pool, tz_offset=0)
+ntp = adafruit_ntp.NTP(pool, tz_offset=0, cache_offset=3600)
 
 while True:
     print(ntp.datetime)

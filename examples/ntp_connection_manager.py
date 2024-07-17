@@ -33,7 +33,7 @@ except ImportError:
 # get the socket pool from connection manager
 socket = adafruit_connection_manager.get_radio_socketpool(radio)
 
-# adjust tz_offset for locale...
-ntp = adafruit_ntp.NTP(socket, tz_offset=-5)
+# adjust tz_offset for locale, only ping NTP server every hour
+ntp = adafruit_ntp.NTP(socket, tz_offset=-5, cache_seconds=3600)
 
 print(ntp.datetime)
