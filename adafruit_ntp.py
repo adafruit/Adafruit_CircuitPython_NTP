@@ -46,7 +46,7 @@ class NTP:
         port: int = 123,
         tz_offset: float = 0,
         socket_timeout: int = 10,
-        cache_seconds: int = 3600,
+        cache_seconds: int = 0,
     ) -> None:
         """
         :param object socketpool: A socket provider such as CPython's `socket` module.
@@ -57,7 +57,7 @@ class NTP:
             this.) For example, Pacific daylight savings time is -7.
         :param int socket_timeout: UDP socket timeout, in seconds.
         :param int cache_seconds: how many seconds to use a cached result from NTP server
-            (default 3600).
+            (default 0, which respects NTP server's minimum).
         """
         self._pool = socketpool
         self._server = server
