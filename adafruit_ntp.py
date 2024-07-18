@@ -46,6 +46,7 @@ class NTP:
         port: int = 123,
         tz_offset: float = 0,
         socket_timeout: int = 10,
+        cache_seconds: int = 0,
     ) -> None:
         """
         :param object socketpool: A socket provider such as CPython's `socket` module.
@@ -55,6 +56,8 @@ class NTP:
             CircuitPython. CPython will determine timezone automatically and adjust (so don't use
             this.) For example, Pacific daylight savings time is -7.
         :param int socket_timeout: UDP socket timeout, in seconds.
+        :param int cache_seconds: how many seconds to use a cached result from NTP server
+            (default 0, which respects NTP server's minimum).
         """
         self._pool = socketpool
         self._server = server
@@ -63,6 +66,7 @@ class NTP:
         self._packet = bytearray(PACKET_SIZE)
         self._tz_offset = int(tz_offset * 60 * 60)
         self._socket_timeout = socket_timeout
+        self._cache_seconds = cache_seconds
 
         # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
         # responses.
@@ -74,7 +78,8 @@ class NTP:
     def datetime(self) -> time.struct_time:
         """Current time from NTP server. Accessing this property causes the NTP time request,
         unless there has already been a recent request. Raises OSError exception if no response
-        is received within socket_timeout seconds"""
+        is received within socket_timeout seconds, ArithmeticError for substantially incorrect
+        NTP results."""
         if time.monotonic_ns() > self.next_sync:
             if self._socket_address is None:
                 self._socket_address = self._pool.getaddrinfo(self._server, self._port)[
@@ -92,8 +97,11 @@ class NTP:
                 # the packet.
                 destination = time.monotonic_ns()
             poll = struct.unpack_from("!B", self._packet, offset=2)[0]
-            self.next_sync = destination + (2**poll) * 1_000_000_000
+
+            cache_offset = max(2**poll, self._cache_seconds)
+            self.next_sync = destination + cache_offset * 1_000_000_000
             seconds = struct.unpack_from("!I", self._packet, offset=PACKET_SIZE - 8)[0]
+
             self._monotonic_start = (
                 seconds
                 + self._tz_offset

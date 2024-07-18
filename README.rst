@@ -70,7 +70,7 @@ Usage Example
     wifi.radio.connect(wifi_ssid, wifi_password)
 
     pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio)
-    ntp = adafruit_ntp.NTP(pool, tz_offset=0)
+    ntp = adafruit_ntp.NTP(pool, tz_offset=0, cache_seconds=3600)
 
     while True:
         print(ntp.datetime)
