@@ -3,6 +3,7 @@
 
 """Print out time based on NTP."""
 
+import os
 import time
 
 import socketpool
@@ -10,14 +11,18 @@ import wifi
 
 import adafruit_ntp
 
-# Get wifi details and more from a secrets.py file
-try:
-    from secrets import secrets
-except ImportError:
-    print("WiFi secrets are kept in secrets.py, please add them there!")
-    raise
+# Get wifi AP credentials from a settings.toml file
+wifi_ssid = os.getenv("CIRCUITPY_WIFI_SSID")
+wifi_password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
+if wifi_ssid is None:
+    print("WiFi credentials are kept in settings.toml, please add them there!")
+    raise ValueError("SSID not found in environment variables")
 
-wifi.radio.connect(secrets["ssid"], secrets["password"])
+try:
+    wifi.radio.connect(wifi_ssid, wifi_password)
+except ConnectionError:
+    print("Failed to connect to WiFi with provided credentials")
+    raise
 
 pool = socketpool.SocketPool(wifi.radio)
 ntp = adafruit_ntp.NTP(pool, tz_offset=0, cache_seconds=3600)
