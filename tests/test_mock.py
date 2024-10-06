@@ -1400,9 +1400,9 @@ def _setup_mock_log_capture(context: unittest.TestCase) -> None:
     """
     # pylint:disable=protected-access
     context._log_handler = ListHandler()
-    context.mogger: logging.Logger = setup_logger(
+    context.mogger: logging.Logger = setup_logger(  # type:ignore # mocking logger
         MOCK_LOGGER
-    )  # type:ignore # mocking logger
+    )
     context._log_handler.log_only_to_me(context.mogger)
 
 

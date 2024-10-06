@@ -150,12 +150,11 @@ class EventType(_IntFlag):  # pylint:disable=too-few-public-methods
 
 class NTPIncompleteError(TimeoutError):
     """
-    NTP synchronize has never completed successfully yet.
+    Indicates that NTP synchronization has not yet completed successfully.
 
     Raised when an NTP operation cannot complete in non-blocking mode or during retries.
-
-    For transient errors and partial progress. Further NTP calls will retry or
-    continue to the next step.
+    This exception represents transient errors and partial progress. Further NTP calls will
+    retry or continue to the next step.
     """
 
 
@@ -166,14 +165,14 @@ class NTP:  # pylint:disable=too-many-instance-attributes
 
     This class uses a simple state machine to manage synchronization:
     - USING_CACHED_REFERENCE (state 3): The default state where the cached time reference is used.
-      - Transitions to GETTING_SOCKET when the cache expires.
+        - Transitions to GETTING_SOCKET when the cache expires.
     - GETTING_SOCKET (state 1): Attempts to perform a DNS lookup for the NTP server.
-      - Transitions to GETTING_PACKET on success.
-      - Remains in this state if retries are needed.
+        - Transitions to GETTING_PACKET on success.
+        - Remains in this state if retries are needed.
     - GETTING_PACKET (state 2): Sends an NTP request and waits for the response.
-      - Transitions back to USING_CACHED_REFERENCE.
-      - On failure, any existing cached value will continue to be used until the next scheduled
-        synchronization.
+        - Transitions back to USING_CACHED_REFERENCE.
+        - On failure, any existing cached value will continue to be used until the next scheduled
+          synchronization.
 
     The state transitions are managed by the `_update_time_sync` method, which is called if
     the cached time is expired when `utc_ns` is accessed.
@@ -213,14 +212,16 @@ class NTP:  # pylint:disable=too-many-instance-attributes
         :param object socketpool: A socket provider such as CPython's `socket` module.
         :param str server: The domain (url) of the ntp server to query.
         :param int port: The port of the ntp server to query.
-        :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
-            CircuitPython. CPython will determine timezone automatically and adjust (so don't use
-            this.) For example, Pacific daylight savings time is -7.
+        :param float tz_offset: Timezone offset in hours from UTC. This applies to both timezone
+                                ignorant CircuitPython and CPython. CPython is aware of timezones,
+                                but this code uses methods that do not access that, to be
+                                consistent with CircuitPython.
+                                For example, Pacific daylight savings time is -7.
         :param int socket_timeout: UDP socket timeout, in seconds.
         :param int cache_seconds: How many seconds to use a cached result from NTP server
-            (default 0, which respects NTP server's minimum).
+                                  (default 0, which respects NTP server's minimum).
         :param bool blocking: Determines whether the NTP operations should be blocking or
-            non-blocking.
+                              non-blocking.
         """
         self._pool: SocketPool = socketpool
         self._server: str = server
@@ -251,25 +252,25 @@ class NTP:  # pylint:disable=too-many-instance-attributes
     @property
     def datetime(self) -> time.struct_time:
         """
-        Time (structure) based on NTP sever time reference. Time synchronization is updated
+        Time (structure) based on NTP server time reference. Time synchronization is updated
         if the cache has expired.
 
-        CircuitPython always expects to be working with UTC. CPython though will use it's own
+        CircuitPython always expects to be working with UTC. CPython though will use its own
         notion of the current time zone when using localtime. To get those to be consistent,
         localtime is overridden (during import) to use gmtime when running in CPython. That
-        way this should always return UTC information.
+        way this should always return UTC based information.
 
-        :returns time.struct_time: current UTC time in seconds.
+        :returns time.struct_time: Current UTC time in seconds.
         """
         current_time_s = self.utc_ns // NS_PER_SEC  # seconds since unix epoch
         return localtime(current_time_s)
 
     @property
     def utc_ns(self) -> int:
-        """UTC (unix epoch) time in nanoseconds based on NTP sever time reference.
+        """UTC (unix epoch) time in nanoseconds based on NTP server time reference.
         Time synchronization updated if the cache has expired.
 
-        :returns: integer number of nanoseconds since the unix epoch (1970-01-01 00:00:00).
+        :returns int: Integer number of nanoseconds since the unix epoch (1970-01-01 00:00:00).
         :raises NTPIncompleteError: if no NTP synchronization has been successful yet.
         """
         if time.monotonic_ns() > self._next_sync:
@@ -373,26 +374,29 @@ class NTP:  # pylint:disable=too-many-instance-attributes
 
         Callbacks can be used to turn off the radio to save power, initiate a network
         connection, or other progress monitoring processes.
-        EG: wifi.radio.enabled = False or connection_manager.connect()
+        EG: `wifi.radio.enabled = False` or `connection_manager.connect()`
 
-        NOTE: This implementation does not prevent duplicate registration of the same callback.
-            All attempts to consistently identify when a callback is already registered have
-            failed due to the limitations of the current circuitpython implementation. Comparing
-            the callback value directly, converting to string using str(), or repr(), or to a
-            number using id() all have cases where an identical callback reference will be
-            treated as different.
+        .. caution::
 
-            If the same callback is registered multiple times, with the same event type, it will
-            be called multiple times when that event type occurs.
+           This implementation does not prevent duplicate registration of the same callback.
+           All attempts to consistently identify when a callback is already registered have
+           failed due to the limitations of the current CircuitPython implementation. Comparing
+           the callback value directly, converting to string using `str()`, or `repr()`, or to a
+           number using `id()` all have cases where an identical callback reference will be
+           treated as different.
+
+           If the same callback is registered multiple times, with the same event type, it will
+           be called multiple times when that event type occurs.
 
         :param Callable[[IntFlag, int], None] callback: The callback function to register.
         :param IntFlag event_types: The event types that should trigger this callback. This can
-                                      be a single event type or a combination of multiple events.
-                                      Defaults to EventType.SYNC_COMPLETE.
-        :raises TypeError: If the event_types argument is not a valid event type or combination of
-                           event types.
+                                    be a single event type or a combination of multiple events.
+                                    Defaults to `EventType.SYNC_COMPLETE`.
+        :raises TypeError: If the `event_types` argument is not a valid event type or combination
+                           of event types.
 
-        Usage examples:
+        Usage examples::
+
             from adafruit_ntp import NTP, EventType
             ntp = NTP(socketpool)
 
@@ -410,9 +414,9 @@ class NTP:  # pylint:disable=too-many-instance-attributes
                 elif event_type == EventType.LOOKUP_FAILED:
                     print(f"DNS lookup failed, need to verify active network connection.")
 
-            # Register for multiple events for a single callback
-            ntp.register_ntp_event_callback(on_ntp_event, EventType.SYNC_COMPLETE | \\
-                EventType.SYNC_FAILED | EventType.LOOKUP_FAILED)
+            # Register a single callback for multiple events
+            ntp.register_ntp_event_callback(on_ntp_event,
+                EventType.SYNC_COMPLETE | EventType.SYNC_FAILED | EventType.LOOKUP_FAILED)
         """
         if not isinstance(event_types, (_IntFlag, int)):
             raise TypeError(f"{type(event_types)} is not compatible with event types")
