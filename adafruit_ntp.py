@@ -188,7 +188,7 @@ class NTP:  # pylint:disable=too-many-instance-attributes
     """Time to wait before retry after first (network operation) failure."""
     MAX_WAIT = int(60 * NS_PER_SEC)  # maximum wait time in nanoseconds
     """Maximum time to wait before retry after a failure."""
-    WAIT_FACTOR = const(1.5)  # multiplier for exponential backoff
+    WAIT_FACTOR = 1.5  # multiplier for exponential backoff
     """Amount (multiplication factor) to increase the wait before retry after each failure."""
 
     MINIMUM_RETRY_DELAY: int = const(60)  # 60 seconds
