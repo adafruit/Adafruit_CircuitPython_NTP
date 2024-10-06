@@ -165,17 +165,23 @@ class NTP:  # pylint:disable=too-many-instance-attributes
 
     This class uses a simple state machine to manage synchronization:
     - USING_CACHED_REFERENCE (state 3): The default state where the cached time reference is used.
-        - Transitions to GETTING_SOCKET when the cache expires.
-    - GETTING_SOCKET (state 1): Attempts to perform a DNS lookup for the NTP server.
-        - Transitions to GETTING_PACKET on success.
-        - Remains in this state if retries are needed.
-    - GETTING_PACKET (state 2): Sends an NTP request and waits for the response.
-        - Transitions back to USING_CACHED_REFERENCE.
-        - On failure, any existing cached value will continue to be used until the next scheduled
-          synchronization.
 
-    The state transitions are managed by the `_update_time_sync` method, which is called if
-    the cached time is expired when `utc_ns` is accessed.
+       - Transitions to GETTING_SOCKET when the cache expires.
+
+    - GETTING_SOCKET (state 1): Attempts to perform a DNS lookup for the NTP server.
+
+       - Transitions to GETTING_PACKET on success.
+       - Remains in this state if retries are needed.
+
+    - GETTING_PACKET (state 2): Sends an NTP request and waits for the response.
+
+       - Transitions back to USING_CACHED_REFERENCE.
+
+    - On failure, any existing cached value will continue to be used until the next scheduled
+      synchronization.
+
+    The state transitions are managed by the ``_update_time_sync`` method, which is called if
+    the cached time is expired when ``utc_ns`` is accessed.
     """
 
     # State machine values
@@ -374,15 +380,15 @@ class NTP:  # pylint:disable=too-many-instance-attributes
 
         Callbacks can be used to turn off the radio to save power, initiate a network
         connection, or other progress monitoring processes.
-        EG: `wifi.radio.enabled = False` or `connection_manager.connect()`
+        EG: ``wifi.radio.enabled = False`` or ``connection_manager.connect()``
 
         .. caution::
 
            This implementation does not prevent duplicate registration of the same callback.
            All attempts to consistently identify when a callback is already registered have
            failed due to the limitations of the current CircuitPython implementation. Comparing
-           the callback value directly, converting to string using `str()`, or `repr()`, or to a
-           number using `id()` all have cases where an identical callback reference will be
+           the callback value directly, converting to string using ``str()``, or ``repr()``, or to a
+           number using ``id()`` all have cases where an identical callback reference will be
            treated as different.
 
            If the same callback is registered multiple times, with the same event type, it will
@@ -391,8 +397,8 @@ class NTP:  # pylint:disable=too-many-instance-attributes
         :param Callable[[IntFlag, int], None] callback: The callback function to register.
         :param IntFlag event_types: The event types that should trigger this callback. This can
                                     be a single event type or a combination of multiple events.
-                                    Defaults to `EventType.SYNC_COMPLETE`.
-        :raises TypeError: If the `event_types` argument is not a valid event type or combination
+                                    Defaults to ``EventType.SYNC_COMPLETE``.
+        :raises TypeError: If the ``event_types`` argument is not a valid event type or combination
                            of event types.
 
         Usage examples::

@@ -22,12 +22,6 @@ wifi_password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
 def on_ntp_event(event_type: EventType, next_time: int):
     """Handle notifications from NTP about not using the radio for awhile."""
     global check_connection  # pylint:disable=global-statement
-    if event_type == EventType.NO_EVENT:
-        print(
-            "No Event: "
-            f"{time.monotonic_ns() =}, {wifi.radio.enabled =}, {wifi.radio.connected =}"
-        )
-        return
     print(f"event {event_type}: Next operation scheduled at {next_time} ns")
     if event_type == EventType.LOOKUP_FAILED:
         check_connection = True
@@ -82,9 +76,5 @@ while True:
             print(fmt_iso(ntp.datetime))
         except NTPIncompleteError:
             print("Waiting for NTP information")
-        except Exception as ex:
-            print(f"{type(ex)}")
-            print(f"Exception: {ex}")
-            raise
     # other regular processing …
     time.sleep(1)
