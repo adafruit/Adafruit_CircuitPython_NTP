@@ -6,9 +6,9 @@
 import os
 import time
 
-import rtc
-import socketpool
-import wifi
+import rtc  # type:ignore
+import socketpool  # type:ignore
+import wifi  # type:ignore
 
 import adafruit_ntp
 

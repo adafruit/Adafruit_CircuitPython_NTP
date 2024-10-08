@@ -37,7 +37,7 @@ try:
 except ImportError:
     pass
 try:
-    from typing import Callable, Optional, Union, Tuple, Dict
+    from typing import Callable, Optional, Tuple, Dict
 except ImportError:
     pass
 try:
@@ -73,79 +73,14 @@ NS_PER_SEC: int = 1_000_000_000
 PACKET_SIZE: int = 48
 
 
-# No enum module in CircuitPython, so implement simple version.
-class _IntFlag:  # pylint:disable=too-few-public-methods
-    """Simple private implementation of an IntFlag enum.
-
-    This contains hard-coded limits specific to the EventType class."""
-
-    def __init__(self, value=0):
-        if isinstance(value, _IntFlag):
-            self.value = value.value
-        else:
-            self.value = value
-
-    def __and__(self, other):
-        if isinstance(other, _IntFlag):
-            return _IntFlag(self.value & other.value)
-        return self.value & other
-
-    def __or__(self, other):
-        if isinstance(other, _IntFlag):
-            return _IntFlag(self.value | other.value)
-        return self.value | other
-
-    def __xor__(self, other):
-        if isinstance(other, _IntFlag):
-            return _IntFlag(self.value ^ other.value)
-        return self.value ^ other
-
-    def __add__(self, other):
-        return self.__or__(other)
-
-    def __gt__(self, other):
-        if isinstance(other, _IntFlag):
-            return self.value > other.value
-        return self.value > other
-
-    def __lt__(self, other):
-        if isinstance(other, _IntFlag):
-            return self.value < other.value
-        return self.value < other
-
-    def __invert__(self):
-        # This relies on ALL_EVENTS existing, and being set correctly.
-        all_flags = EventType.ALL_EVENTS.value
-        return _IntFlag(~self.value & all_flags)
-
-    def __repr__(self):
-        return f"IntFlag({self.value})"
-
-    def __eq__(self, other):
-        if isinstance(other, _IntFlag):
-            return self.value == other.value
-        return self.value == other
-
-    def __bool__(self):
-        return bool(self.value)
-
-    @classmethod
-    def from_value(cls, value):
-        """enum emulation"""
-        return cls(value)
-
-
-class EventType(_IntFlag):  # pylint:disable=too-few-public-methods
+class EventType:  # pylint:disable=too-few-public-methods
     """NTP callback notification Event Types."""
 
-    NO_EVENT = _IntFlag(0b000)
-    SYNC_COMPLETE = _IntFlag(0b001)
-    SYNC_FAILED = _IntFlag(0b010)  # get packet failed
-    LOOKUP_FAILED = _IntFlag(0b100)  # getaddrinfo failed (not timedout?)
-    # The custom _IntFlat class used uses the ALL_EVENTS attribute here to get a bit mask to use
-    # when inverting flag values. Make sure to update this if changing how many event types are
-    # being used.
-    ALL_EVENTS = _IntFlag(0b111)
+    NO_EVENT = const(0b000)
+    SYNC_COMPLETE = const(0b001)
+    SYNC_FAILED = const(0b010)  # get packet failed
+    LOOKUP_FAILED = const(0b100)  # getaddrinfo failed (not timedout?)
+    ALL_EVENTS = const(0b111)
 
 
 class NTPIncompleteError(TimeoutError):
@@ -247,7 +182,7 @@ class NTP:  # pylint:disable=too-many-instance-attributes
         self._next_sync: int = 0
         self._state: int = self.USING_CACHED_REFERENCE
         self._last_sync_time: int = 0  # Track the last successful sync time
-        self._callbacks: Dict[Callable[[_IntFlag, int], None], _IntFlag] = {}
+        self._callbacks: Dict[Callable[[int, int], None], int] = {}
         # The variables _next_rate_limit_end and _next_rate_limit_delay are intentionally
         # not initialized here because they are only used after calling
         # _initialize_backoff_timing(). Accessing them before initialization will raise an
@@ -317,7 +252,6 @@ class NTP:  # pylint:disable=too-many-instance-attributes
         - GETTING_SOCKET: Perform DNS lookup for the NTP server.
         - GETTING_PACKET: Send NTP request and await response.
         """
-        self._notify_ntp_event_callbacks(EventType.NO_EVENT, -1)
         if self._state == self.USING_CACHED_REFERENCE:
             # Cached offset value expired, reinitialize backoff timing and proceed to DNS lookup.
             self._initialize_backoff_timing()
@@ -372,8 +306,8 @@ class NTP:  # pylint:disable=too-many-instance-attributes
 
     def register_ntp_event_callback(
         self,
-        callback: Callable[[_IntFlag, int], None],
-        event_types: Union[_IntFlag, int] = EventType.SYNC_COMPLETE,
+        callback: Callable[[int, int], None],
+        event_types: int = EventType.SYNC_COMPLETE,
     ) -> None:
         """
         Register a callback to be notified for specific NTP events.
@@ -424,23 +358,20 @@ class NTP:  # pylint:disable=too-many-instance-attributes
             ntp.register_ntp_event_callback(on_ntp_event,
                 EventType.SYNC_COMPLETE | EventType.SYNC_FAILED | EventType.LOOKUP_FAILED)
         """
-        if not isinstance(event_types, (_IntFlag, int)):
+        if not isinstance(event_types, int):
             raise TypeError(f"{type(event_types)} is not compatible with event types")
-        if not (
-            (EventType.ALL_EVENTS | event_types) == EventType.ALL_EVENTS
-            or event_types == EventType.NO_EVENT
+        if (
+            EventType.ALL_EVENTS | event_types != EventType.ALL_EVENTS
+            or event_types == 0
         ):
-            events_value = (
-                event_types if isinstance(event_types, int) else event_types.value
-            )
             raise TypeError(
-                f"Invalid event type mask 0b{events_value:b}. "
+                f"Invalid event type mask 0b{event_types:b}. "
                 "Only known events can receive notifications."
             )
         self._callbacks[callback] = event_types
 
     def _notify_ntp_event_callbacks(
-        self, event_type: _IntFlag, next_operation_time: int
+        self, event_type: int, next_operation_time: int
     ) -> None:
         """
         Call all registered callbacks that are interested in the given event type.

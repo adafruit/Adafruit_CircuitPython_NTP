@@ -66,7 +66,6 @@ sys.modules["time"] = mock_time
 from adafruit_ntp import (  # pylint:disable=wrong-import-position
     NTP,
     EventType,
-    _IntFlag,
     NTPIncompleteError,
 )  # pylint:disable=wrong-import-position
 
@@ -120,7 +119,7 @@ class NTPState:  # pylint:disable=too-many-instance-attributes
         monotonic_start_ns: int = 0,
         next_sync: int = 0,
         last_sync_time: int = 0,
-        callbacks: Dict[Callable[[_IntFlag, int], None], _IntFlag] = None,
+        callbacks: Dict[Callable[[int, int], None], int] = None,
         state: int = 0,
         blocking: bool = True,
         monotonic_ns: int = 0,  # mocked functionality internal state information
@@ -138,7 +137,7 @@ class NTPState:  # pylint:disable=too-many-instance-attributes
         self.monotonic_start_ns: int = monotonic_start_ns
         self.next_sync: int = next_sync
         self.last_sync_time: int = last_sync_time
-        self.callbacks: Dict[Callable[[_IntFlag, int], None], _IntFlag] = (
+        self.callbacks: Dict[Callable[[int, int], None], int] = (
             {} if callbacks is None else dict(callbacks)
         )
         self.state: int = state
@@ -865,19 +864,11 @@ def _changed_state_fields(
         # in memory.
         # All attempts to find a data structure and comparison code to match expected and actual
         # state dictionary callable instance have failed. An expected entry created from exactly
-        # the same method as was registered still compares as not equal. The best can apparently
-        # be done, is to make sure that the registered event masks are the same.
+        # the same method as was registered still compares as not equal. The best that can
+        # apparently be done, is to make sure that the registered event masks are the same.
         callback1 = getattr(state1, field)
         callback2 = getattr(state2, field)
-        # Forcing all values to IntFlag instances seems easier than extracting the .value when the
-        # dict value is an IntFlag. Need to get them to be consistent for the sorting (on
-        # circuitpython) to work. Otherwise can get.
-        #     TypeError: unsupported types for __lt__: 'int', 'IntFlag'
-        # Either cpython automatically reverse the comparison, or it happens to only compare IntFlag
-        # to int, and not int to IntFlag.
-        if sorted([_IntFlag(v) for v in callback1.values()]) != sorted(
-            [_IntFlag(v) for v in callback2.values()]
-        ):
+        if sorted(callback1.values()) != sorted(callback2.values()):
             changed_fields.add(field)
 
     return changed_fields

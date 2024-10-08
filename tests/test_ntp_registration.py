@@ -8,10 +8,6 @@ Unittests for registration functionality of NTP instances from adafruit_ntp
 
 import unittest
 
-try:
-    from typing import Union
-except ImportError:
-    pass
 import adafruit_logging as logging
 from tests.shared_for_testing import (
     ListHandler,
@@ -32,7 +28,7 @@ from tests.ntp_testing_support import (
     verify_generic_expected_state_and_log,
     DEFAULT_NTP_STATE,
 )
-from adafruit_ntp import EventType, _IntFlag
+from adafruit_ntp import EventType
 
 
 class TestNTPRegistrations(unittest.TestCase):
@@ -112,9 +108,7 @@ class TestNTPRegistrations(unittest.TestCase):
             callback1.mock_callback, EventType.SYNC_COMPLETE
         )
         expected_state = DEFAULT_NTP_STATE.copy()
-        expected_state.callbacks[callback1.mock_callback] = (
-            EventType.SYNC_COMPLETE.value
-        )
+        expected_state.callbacks[callback1.mock_callback] = EventType.SYNC_COMPLETE
         verify_generic_expected_state_and_log(
             self,
             expected_state,
@@ -227,23 +221,20 @@ class TestNTPRegistrations(unittest.TestCase):
         )
 
     def test_register_bad_int_notification(self):  # pylint:disable=invalid-name
-        """Test registering a callback for an invalid event."""
+        """Test registering a callback for an invalid (too big) event."""
         callback = MockCallback("bad1")
         bad_mask = 0b11111111
         self._verify_bad_notification(bad_mask, callback)
 
-    def test_register_bad_intflag_notification2(self):  # pylint:disable=invalid-name
-        """Test registering a callback for an invalid event."""
+    def test_register_bad_int_zero_notification(self):  # pylint:disable=invalid-name
+        """Test registering a callback for an invalid zero event."""
         callback = MockCallback("bad1a")
-        bad_mask = _IntFlag(0b11111111)
+        bad_mask = 0
         self._verify_bad_notification(bad_mask, callback)
 
-    def _verify_bad_notification(
-        self, bad_mask: Union[_IntFlag, int], callback: MockCallback
-    ) -> None:
+    def _verify_bad_notification(self, bad_mask: int, callback: MockCallback) -> None:
         """Verify an invalid register does not change instance state or generate any log records."""
-        effective_mask = bad_mask if isinstance(bad_mask, int) else bad_mask.value
-        type_error = TypeError(BAD_EVENT_MASK_MSG % f"{effective_mask:b}")
+        type_error = TypeError(BAD_EVENT_MASK_MSG % f"{bad_mask:b}")
         with self.assertRaises(type(type_error)) as context:
             self.ntp.register_ntp_event_callback(callback.mock_callback, bad_mask)
         exc_data = get_context_exception(context)

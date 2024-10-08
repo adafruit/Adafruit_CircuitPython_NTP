@@ -6,8 +6,8 @@
 import os
 import time
 
-import socketpool
-import wifi
+import socketpool  # type:ignore
+import wifi  # type:ignore
 
 from adafruit_ntp import NTP, EventType, NTPIncompleteError
 

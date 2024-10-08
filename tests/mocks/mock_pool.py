@@ -228,7 +228,7 @@ class MockPool:
         return MockSocket(family, type, proto)
 
     def set_getaddrinfo_responses(
-        self, responses: List[Union[Exception, GetAddressInfoT]]
+        self, responses: List[Union[Exception, GetAddressInfoT]]  # type:ignore
     ) -> None:  # type:ignore
         """Set a sequence of responses for the getaddrinfo method."""
         self.mock_getaddrinfo_attempts = responses
@@ -256,8 +256,7 @@ class MockCallback:
 
     def mock_callback(self, event: int, delay: int) -> None:
         """Log which callback was called, and the triggering event details"""
-        event_num = event if isinstance(event, int) else event.value
-        if event_num == 0:
+        if event == 0:
             _logger.debug(MOCKED_CALLBACK_MSG % (self.context, event, delay))
             return
         _logger.info(MOCKED_CALLBACK_MSG % (self.context, event, delay))
