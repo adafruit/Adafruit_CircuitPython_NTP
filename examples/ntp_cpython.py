@@ -8,7 +8,6 @@ import time
 
 import adafruit_ntp
 
-# Don't use tz_offset kwarg with CPython because it will adjust automatically.
 ntp = adafruit_ntp.NTP(socket, cache_seconds=3600)
 
 while True:

@@ -10,7 +10,7 @@ import adafruit_ntp
 
 # determine which radio is available
 try:
-    import wifi
+    import wifi  # type:ignore
     import os
 
     # adjust method to get credentials as necessary...
@@ -22,7 +22,7 @@ try:
 except ImportError:
     import board
     from digitalio import DigitalInOut
-    from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
+    from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K  # type:ignore
 
     # adjust with busio.SPI() as necessary...
     spi = board.SPI()
