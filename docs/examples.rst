@@ -8,12 +8,21 @@ Ensure your device works with this simple test that prints out the time from NTP
     :linenos:
 
 Set RTC
-------------
+-------
 
 Sync your CircuitPython board's realtime clock (RTC) with time from NTP.
 
 .. literalinclude:: ../examples/ntp_set_rtc.py
     :caption: examples/ntp_set_rtc.py
+    :linenos:
+
+Using Notifications
+-------------------
+
+Using notifications to monitor state and control power usage.
+
+.. literalinclude:: ../examples/ntp_powersave.py
+    :caption: examples/ntp_powersave.py
     :linenos:
 
 Simple test with CPython
