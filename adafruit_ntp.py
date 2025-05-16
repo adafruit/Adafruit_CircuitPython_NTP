@@ -19,11 +19,11 @@ Implementation Notes
    https://github.com/adafruit/circuitpython/releases
 
 """
+
 import struct
 import time
 
 from micropython import const
-
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
@@ -32,13 +32,13 @@ NTP_TO_UNIX_EPOCH = 2208988800  # 1970-01-01 00:00:00
 PACKET_SIZE = const(48)
 
 
-class NTP:  # pylint:disable=too-many-instance-attributes
+class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
     This module does not handle daylight savings or local time. It simply requests
     UTC from a NTP server.
     """
 
-    def __init__(  # pylint:disable=too-many-arguments
+    def __init__(
         self,
         socketpool,
         *,
@@ -79,9 +79,7 @@ class NTP:  # pylint:disable=too-many-instance-attributes
         is received within socket_timeout seconds, ArithmeticError for substantially incorrect
         NTP results."""
         if self._socket_address is None:
-            self._socket_address = self._pool.getaddrinfo(self._server, self._port)[0][
-                4
-            ]
+            self._socket_address = self._pool.getaddrinfo(self._server, self._port)[0][4]
 
         self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
         for i in range(1, PACKET_SIZE):
@@ -113,9 +111,7 @@ class NTP:  # pylint:disable=too-many-instance-attributes
 
         # _round_trip_delay = (local_recv_ns - local_send_ns) - (srv_send_ns - srv_recv_ns)
         # Calculate (best estimate) offset between server UTC and board monotonic_ns time
-        clock_offset = (
-            (srv_recv_ns - local_send_ns) + (srv_send_ns - local_recv_ns)
-        ) // 2
+        clock_offset = ((srv_recv_ns - local_send_ns) + (srv_send_ns - local_recv_ns)) // 2
 
         self._monotonic_start_ns = clock_offset + self._tz_offset * 1_000_000_000
 
@@ -127,9 +123,7 @@ class NTP:  # pylint:disable=too-many-instance-attributes
             self._update_time_sync()
 
         # Calculate the current time based on the current and start monotonic times
-        current_time_s = (
-            time.monotonic_ns() + self._monotonic_start_ns
-        ) // 1_000_000_000
+        current_time_s = (time.monotonic_ns() + self._monotonic_start_ns) // 1_000_000_000
 
         return time.localtime(current_time_s)
 

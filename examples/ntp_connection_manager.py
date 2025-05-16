@@ -6,12 +6,14 @@
 """Print out time based on NTP, using connection manager"""
 
 import adafruit_connection_manager
+
 import adafruit_ntp
 
 # determine which radio is available
 try:
-    import wifi
     import os
+
+    import wifi
 
     # adjust method to get credentials as necessary...
     wifi_ssid = os.getenv("CIRCUITPY_WIFI_SSID")
@@ -21,8 +23,8 @@ try:
         radio.connect(wifi_ssid, wifi_password)
 except ImportError:
     import board
-    from digitalio import DigitalInOut
     from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
+    from digitalio import DigitalInOut
 
     # adjust with busio.SPI() as necessary...
     spi = board.SPI()
