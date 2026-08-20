@@ -36,6 +36,17 @@ class NTP:
     """Network Time Protocol (NTP) helper module for CircuitPython.
     This module does not handle daylight savings or local time. It simply requests
     UTC from a NTP server.
+
+    :param object socketpool: A socket provider such as CPython's `socket` module.
+    :param str server: The domain of the ntp server to query.  Default: "0.adafruit.ntp.org"
+    :param int port: The port of the ntp server to query.
+    :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
+        CircuitPython. CPython will determine timezone automatically and adjust (so don't use
+        this.) For example, Pacific daylight savings time is -7.
+    :param int socket_timeout: UDP socket timeout, in seconds. Default 10 seconds
+    :param int cache_seconds: how many seconds to use a cached result from NTP server
+        (default 0, which respects NTP server's minimum).
+
     """
 
     def __init__(
@@ -48,17 +59,6 @@ class NTP:
         socket_timeout: int = 10,
         cache_seconds: int = 0,
     ) -> None:
-        """
-        :param object socketpool: A socket provider such as CPython's `socket` module.
-        :param str server: The domain of the ntp server to query.
-        :param int port: The port of the ntp server to query.
-        :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
-            CircuitPython. CPython will determine timezone automatically and adjust (so don't use
-            this.) For example, Pacific daylight savings time is -7.
-        :param int socket_timeout: UDP socket timeout, in seconds.
-        :param int cache_seconds: how many seconds to use a cached result from NTP server
-            (default 0, which respects NTP server's minimum).
-        """
         self._pool = socketpool
         self._server = server
         self._port = port
