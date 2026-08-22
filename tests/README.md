@@ -33,18 +33,8 @@ a laptop.
 ## Expected result
 
 ```
-20 passed, 2 xfailed
+25 passed
 ```
-
-The two xfails assert what a fix should do: reject a bogus server timestamp with
-`ArithmeticError` rather than letting it reach `localtime()`, and actually raise
-the `ArithmeticError` that `_update_time_sync` and `utc_ns` already document.
-
-These tests deliberately document *current* behaviour. When the library starts
-validating the timestamp they will fail, and the two xfails will turn into
-XPASS. That is the intended signal — the suite is a bug reproduction, not a
-regression guard, and a fix is supposed to make it go red so it gets updated
-alongside.
 
 ## What the tests establish
 
@@ -53,16 +43,18 @@ it before sending, and discards `recv_into`'s return value — so it reads back
 its own zeros whenever a datagram fails to overwrite offsets 40-43. What that
 produces depends on where the datagram truncates:
 
-| bytes received | result |
-|---|---|
-| 0-32 | `OverflowError` |
-| 33-40 | **silently returns a time decades off (1962)** |
-| 41-43 | silently wrong by days |
-| 44-48 | correct |
+| bytes received | before the fix | now |
+|---|---|---|
+| 0-32 | `OverflowError` | `ArithmeticError` |
+| 33-40 | silently returned a time decades off (1962) | `ArithmeticError` |
+| 41-43 | silently wrong by weeks | `ArithmeticError` |
+| 44-48 | correct | correct |
 
-The 1962 case is the quieter half: `datetime` averages the server's receive and
-transmit timestamps, so a valid receive plus a zeroed transmit lands halfway
-between 1900 and now — inside int32, so nothing raises at all.
+The 1962 row was the quieter half: `datetime` averages the server's receive and
+transmit timestamps, so a valid receive plus a zeroed transmit landed halfway
+between 1900 and now — inside int32, so nothing raised at all. A guard that only
+checked for a zero timestamp would not have caught the 41-43 row either; that
+one needs the length check.
 
 `test_real_sockets.py` confirms the mechanism outside the fake: buffer reuse and
 truncation over loopback UDP, an over-48-byte response being harmless, and —

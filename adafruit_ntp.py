@@ -88,10 +88,17 @@ class NTP:
             sock.settimeout(self._socket_timeout)
             local_send_ns = time.monotonic_ns()  # expanded
             sock.sendto(self._packet, self._socket_address)
-            sock.recv_into(self._packet)
+            received = sock.recv_into(self._packet)
             # Get the time in the context to minimize the difference between it and receiving
             # the packet.
             local_recv_ns = time.monotonic_ns()  # was destination
+
+        # The same buffer holds the request and the response, and it was zeroed
+        # before sending. A short read therefore leaves part of the timestamp
+        # fields reading as our own zeros, which would be parsed as a time in
+        # 1900 and underflow time.localtime() on a 32-bit board.
+        if received is None or received < PACKET_SIZE:
+            raise ArithmeticError(f"NTP response was {received} bytes, expected {PACKET_SIZE}")
 
         poll = struct.unpack_from("!B", self._packet, offset=2)[0]
 
@@ -100,6 +107,12 @@ class NTP:
 
         srv_recv_s, srv_recv_f = struct.unpack_from("!II", self._packet, offset=32)
         srv_send_s, srv_send_f = struct.unpack_from("!II", self._packet, offset=40)
+
+        # A server timestamp earlier than the unix epoch is not a real time: it
+        # is a zeroed or truncated field. Rejecting it here keeps the negative
+        # value out of the arithmetic below, and out of time.localtime().
+        if srv_recv_s < NTP_TO_UNIX_EPOCH or srv_send_s < NTP_TO_UNIX_EPOCH:
+            raise ArithmeticError("NTP response has an invalid timestamp")
 
         # Convert the server times from NTP to UTC for local use
         srv_recv_ns = (srv_recv_s - NTP_TO_UNIX_EPOCH) * 1_000_000_000 + (
