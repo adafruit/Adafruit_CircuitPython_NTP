@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Ted Timmons
+#
+# SPDX-License-Identifier: MIT
+
+name: Run Tests
+
+on: [pull_request, push]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pytest
+        run: pip install pytest
+
+      # The suite needs no hardware and no network: it substitutes a `time`
+      # shim that enforces the 32-bit machine-word limit on localtime(), and
+      # the real-socket tests use loopback UDP against a local fake server.
+      - name: Run tests
+        run: python -m pytest tests/ -v
