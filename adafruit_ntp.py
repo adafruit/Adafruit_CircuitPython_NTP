@@ -30,6 +30,9 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
 NTP_TO_UNIX_EPOCH = 2208988800  # 1970-01-01 00:00:00
 PACKET_SIZE = const(48)
+# RFC 5905 constrains the poll interval to 2**4 through 2**17 seconds.
+NTP_MINPOLL = const(4)
+NTP_MAXPOLL = const(17)
 
 
 class NTP:
@@ -101,6 +104,13 @@ class NTP:
             raise ArithmeticError(f"NTP response was {received} bytes, expected {PACKET_SIZE}")
 
         poll = struct.unpack_from("!B", self._packet, offset=2)[0]
+
+        # The poll field is one byte straight off the wire and it decides how
+        # long until the next sync. Unclamped, both ends misbehave: 255 puts the
+        # next sync 2**255 seconds away, so a single corrupt byte stops the
+        # client re-syncing for good while still returning a valid-looking time,
+        # and 0 re-queries every second, which gets the client rate limited.
+        poll = min(max(poll, NTP_MINPOLL), NTP_MAXPOLL)
 
         cache_offset_s = max(2**poll, self._cache_seconds)
         self.next_sync = local_recv_ns + cache_offset_s * 1_000_000_000
