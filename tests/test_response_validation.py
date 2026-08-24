@@ -2,31 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Regression tests for issue #35, `OverflowError` from `NTP.datetime`.
+"""What `NTP` does with a response that is short, zeroed, or otherwise unusable.
 
-    https://github.com/adafruit/Adafruit_CircuitPython_NTP/issues/35
+A well-formed 48-byte datagram must still parse; anything that does not carry a
+real transmit timestamp must raise `ArithmeticError` rather than crash, or --
+worse -- return a plausible-looking wrong time. See the comment above the
+rejection tests for the underlying defect.
+
+`harness.board_time()` substitutes a `time` whose `localtime()` enforces the
+32-bit machine-word limit a real board has and whose monotonic clock is
+controllable. CPython's `localtime()` has no such limit, so without the shim
+the board-only crash is invisible on a laptop.
 
 Run from the repo root:
 
     python3 -m venv .venv && .venv/bin/pip install pytest
     .venv/bin/python -m pytest tests/ -v
-
-The bug: the library uses one bytearray as both the request and the response
-buffer, zeroes it before sending, and discarded `recv_into`'s return value. Any
-datagram that failed to overwrite offsets 40-43 was parsed as the client's own
-zeros, giving a unix time of -2208988800. On a 32-bit board `time.localtime()`
-converts its argument to a machine word and -2208988800 does not fit in int32,
-hence the OverflowError.
-
-CPython's `localtime()` has no such limit, so the crash is invisible under
-plain CPython. `harness.board_time()` substitutes a `time` whose `localtime()`
-enforces the int32 limit and whose monotonic clock is controllable, which makes
-the board-only failure deterministic on a laptop with no hardware.
 """
 
 import pytest
 from harness import (
-    NTP_TO_UNIX_EPOCH,
     FakePool,
     board_time,
     make_packet,
@@ -57,6 +52,16 @@ def test_response_longer_than_48_bytes_is_accepted():
 
 # --------------------------------------------------------------------------
 # A zero or truncated timestamp is rejected instead of reaching localtime().
+#
+# The defect these cover is issue #35, `OverflowError` from `NTP.datetime`:
+# https://github.com/adafruit/Adafruit_CircuitPython_NTP/issues/35
+#
+# The library uses one bytearray as both the request and the response buffer,
+# zeroes it before sending, and discarded `recv_into`'s return value. Any
+# datagram that failed to overwrite offsets 40-43 was parsed as the client's
+# own zeros, giving a unix time of -2208988800. On a 32-bit board
+# `time.localtime()` converts its argument to a machine word, -2208988800 does
+# not fit in int32, and the OverflowError in the issue is the result.
 # --------------------------------------------------------------------------
 def test_zero_timestamp_response_is_rejected():
     """What the issue filer observed: `<class 'int'> 0` for the seconds field,
@@ -149,75 +154,3 @@ def test_rejection_leaves_no_negative_timestamp_behind():
         with pytest.raises(ArithmeticError):
             _ = client.datetime
         assert client._monotonic_start_ns == 0
-
-
-# --------------------------------------------------------------------------
-# The poll field is a single byte taken straight off the wire and used as
-# 2**poll seconds until the next sync. RFC 5905 constrains it to
-# NTP_MINPOLL..NTP_MAXPOLL; unclamped, both ends misbehave.
-# --------------------------------------------------------------------------
-NTP_MINPOLL = 4  # 16 seconds
-NTP_MAXPOLL = 17  # 131072 seconds, about 36 hours
-
-
-def _next_sync_horizon_s(client, clock):
-    return (client.next_sync - clock.monotonic_ns()) // 1_000_000_000
-
-
-def test_absurd_poll_does_not_disable_resync():
-    """A poll byte of 255 means 2**255 seconds -- roughly 10**69 years. One
-    corrupt or hostile byte would stop the client ever re-syncing again, while
-    still returning a valid-looking time so nothing downstream notices."""
-    pool = FakePool([make_packet(transmit_s=valid_unix_seconds(), poll=255)])
-    with board_time(adafruit_ntp) as clock:
-        client = adafruit_ntp.NTP(pool)
-        assert client.datetime.tm_year == 2024
-        horizon = _next_sync_horizon_s(client, clock)
-    assert horizon <= 2**NTP_MAXPOLL, (
-        f"next sync is {horizon}s away; the client would never re-sync"
-    )
-
-
-def test_tiny_poll_does_not_cause_aggressive_resync():
-    """A poll byte of 0 means re-query every second. That is abusive by NTP
-    standards, gets the client rate-limited, and is what made issue #35 fire as
-    often as it did before cache_seconds landed in #37."""
-    pool = FakePool([make_packet(transmit_s=valid_unix_seconds(), poll=0)])
-    with board_time(adafruit_ntp) as clock:
-        client = adafruit_ntp.NTP(pool)
-        _ = client.datetime
-        horizon = _next_sync_horizon_s(client, clock)
-    assert horizon >= 2**NTP_MINPOLL, f"next sync is only {horizon}s away"
-
-
-def test_ordinary_poll_is_respected():
-    """A poll inside the RFC range must pass through untouched."""
-    pool = FakePool([make_packet(transmit_s=valid_unix_seconds(), poll=6)])
-    with board_time(adafruit_ntp) as clock:
-        client = adafruit_ntp.NTP(pool)
-        _ = client.datetime
-        horizon = _next_sync_horizon_s(client, clock)
-    assert horizon == pytest.approx(2**6, abs=1)
-
-
-def test_absurd_poll_is_clamped_to_the_rfc_maximum():
-    """With no explicit cache_seconds, a nonsense poll falls back to the RFC
-    ceiling rather than to something arbitrary."""
-    pool = FakePool([make_packet(transmit_s=valid_unix_seconds(), poll=255)])
-    with board_time(adafruit_ntp) as clock:
-        client = adafruit_ntp.NTP(pool)
-        _ = client.datetime
-        horizon = _next_sync_horizon_s(client, clock)
-    assert horizon == pytest.approx(2**NTP_MAXPOLL, abs=1)
-
-
-def test_larger_cache_seconds_still_wins_over_a_clamped_poll():
-    """cache_seconds is a floor, not a cap: `max(2**poll, cache_seconds)`. A
-    caller asking for longer than the clamped poll interval still gets it."""
-    longer = 2 ** (NTP_MAXPOLL + 1)
-    pool = FakePool([make_packet(transmit_s=valid_unix_seconds(), poll=255)])
-    with board_time(adafruit_ntp) as clock:
-        client = adafruit_ntp.NTP(pool, cache_seconds=longer)
-        _ = client.datetime
-        horizon = _next_sync_horizon_s(client, clock)
-    assert horizon == pytest.approx(longer, abs=1)

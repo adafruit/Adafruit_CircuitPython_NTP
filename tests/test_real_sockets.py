@@ -4,7 +4,7 @@
 
 """Real-socket tests for issue #35.
 
-test_issue35.py drives the library through a fake socketpool. These tests use
+test_response_validation.py drives the library through a fake socketpool. These tests use
 CPython's actual UDP sockets against a local fake server, to show the two
 mechanisms are real socket behaviour and not artifacts of the fake:
 

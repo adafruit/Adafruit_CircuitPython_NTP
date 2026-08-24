@@ -13,7 +13,8 @@ python3 -m venv .venv && .venv/bin/pip install pytest
 
 | File | What |
 |---|---|
-| `test_issue35.py` | The bug, driven through a fake socketpool |
+| `test_response_validation.py` | The bug: short, zeroed, and truncated responses, driven through a fake socketpool |
+| `test_poll_interval.py` | The server's poll byte clamped to the RFC 5905 range before it sets the resync interval |
 | `test_real_sockets.py` | The same mechanisms shown with CPython's real UDP sockets |
 | `harness.py` | Fake socketpool + a `time` shim enforcing the 32-bit machine-word limit on `localtime()`, as a real board does |
 | `conftest.py` | `micropython.const` shim, and puts the repo root on `sys.path` so `import adafruit_ntp` works |
@@ -33,7 +34,7 @@ a laptop.
 ## Expected result
 
 ```
-25 passed
+30 passed
 ```
 
 ## What the tests establish
