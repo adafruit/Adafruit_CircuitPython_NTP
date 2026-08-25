@@ -30,6 +30,9 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_NTP.git"
 
 NTP_TO_UNIX_EPOCH = 2208988800  # 1970-01-01 00:00:00
 PACKET_SIZE = const(48)
+# RFC 5905 constrains the poll interval to 2**4 through 2**17 seconds.
+NTP_MINPOLL = const(4)
+NTP_MAXPOLL = const(17)
 
 
 class NTP:
@@ -88,18 +91,38 @@ class NTP:
             sock.settimeout(self._socket_timeout)
             local_send_ns = time.monotonic_ns()  # expanded
             sock.sendto(self._packet, self._socket_address)
-            sock.recv_into(self._packet)
+            received = sock.recv_into(self._packet)
             # Get the time in the context to minimize the difference between it and receiving
             # the packet.
             local_recv_ns = time.monotonic_ns()  # was destination
 
+        # The same buffer holds the request and the response, and it was zeroed
+        # before sending. A short read therefore leaves part of the timestamp
+        # fields reading as our own zeros, which would be parsed as a time in
+        # 1900 and underflow time.localtime() on a 32-bit board.
+        if received is None or received < PACKET_SIZE:
+            raise ArithmeticError(f"NTP response was {received} bytes, expected {PACKET_SIZE}")
+
         poll = struct.unpack_from("!B", self._packet, offset=2)[0]
+
+        # The poll field is one byte straight off the wire and it decides how
+        # long until the next sync. Unclamped, both ends misbehave: 255 puts the
+        # next sync 2**255 seconds away, so a single corrupt byte stops the
+        # client re-syncing for good while still returning a valid-looking time,
+        # and 0 re-queries every second, which gets the client rate limited.
+        poll = min(max(poll, NTP_MINPOLL), NTP_MAXPOLL)
 
         cache_offset_s = max(2**poll, self._cache_seconds)
         self.next_sync = local_recv_ns + cache_offset_s * 1_000_000_000
 
         srv_recv_s, srv_recv_f = struct.unpack_from("!II", self._packet, offset=32)
         srv_send_s, srv_send_f = struct.unpack_from("!II", self._packet, offset=40)
+
+        # A server timestamp earlier than the unix epoch is not a real time: it
+        # is a zeroed or truncated field. Rejecting it here keeps the negative
+        # value out of the arithmetic below, and out of time.localtime().
+        if srv_recv_s < NTP_TO_UNIX_EPOCH or srv_send_s < NTP_TO_UNIX_EPOCH:
+            raise ArithmeticError("NTP response has an invalid timestamp")
 
         # Convert the server times from NTP to UTC for local use
         srv_recv_ns = (srv_recv_s - NTP_TO_UNIX_EPOCH) * 1_000_000_000 + (
