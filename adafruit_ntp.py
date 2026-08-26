@@ -46,9 +46,11 @@ class NTP:
     :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
         CircuitPython. CPython will determine timezone automatically and adjust (so don't use
         this.) For example, Pacific daylight savings time is -7.
-    :param int socket_timeout: UDP socket timeout, in seconds.
+    :param int socket_timeout: UDP socket timeout, in seconds (default 5).
     :param int cache_seconds: how many seconds to use a cached result from NTP server
         (default 0, which respects NTP server's minimum).
+    :param int retries: extra query attempts after a timeout before raising, since NTP over
+        UDP can silently drop a datagram (default 2, i.e. up to 3 attempts total).
 
     """
 
@@ -59,8 +61,9 @@ class NTP:
         server: str = "0.adafruit.pool.ntp.org",
         port: int = 123,
         tz_offset: float = 0,
-        socket_timeout: int = 10,
+        socket_timeout: int = 5,
         cache_seconds: int = 0,
+        retries: int = 2,
     ) -> None:
         self._pool = socketpool
         self._server = server
@@ -70,6 +73,8 @@ class NTP:
         self._tz_offset = int(tz_offset * 60 * 60)
         self._socket_timeout = socket_timeout
         self._cache_seconds = cache_seconds
+        # retry PR
+        self._retries = retries
 
         # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
         # responses.
@@ -84,17 +89,24 @@ class NTP:
         if self._socket_address is None:
             self._socket_address = self._pool.getaddrinfo(self._server, self._port)[0][4]
 
-        self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
-        for i in range(1, PACKET_SIZE):
-            self._packet[i] = 0
-        with self._pool.socket(self._pool.AF_INET, self._pool.SOCK_DGRAM) as sock:
-            sock.settimeout(self._socket_timeout)
-            local_send_ns = time.monotonic_ns()  # expanded
-            sock.sendto(self._packet, self._socket_address)
-            received = sock.recv_into(self._packet)
-            # Get the time in the context to minimize the difference between it and receiving
-            # the packet.
-            local_recv_ns = time.monotonic_ns()  # was destination
+        # retry PR
+        for attempt in range(self._retries + 1):
+            try:
+                self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
+                for i in range(1, PACKET_SIZE):
+                    self._packet[i] = 0
+                with self._pool.socket(self._pool.AF_INET, self._pool.SOCK_DGRAM) as sock:
+                    sock.settimeout(self._socket_timeout)
+                    local_send_ns = time.monotonic_ns()  # expanded
+                    sock.sendto(self._packet, self._socket_address)
+                    received = sock.recv_into(self._packet)
+                    # Get the time in the context to minimize the difference between
+                    # it and receiving the packet.
+                    local_recv_ns = time.monotonic_ns()  # was destination
+                break
+            except OSError:
+                if attempt == self._retries:
+                    raise
 
         # The same buffer holds the request and the response, and it was zeroed
         # before sending. A short read therefore leaves part of the timestamp
