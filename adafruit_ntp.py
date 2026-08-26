@@ -46,11 +46,11 @@ class NTP:
     :param float tz_offset: Timezone offset in hours from UTC. Only useful for timezone ignorant
         CircuitPython. CPython will determine timezone automatically and adjust (so don't use
         this.) For example, Pacific daylight savings time is -7.
-    :param int socket_timeout: UDP socket timeout, in seconds (default 5).
+    :param int socket_timeout: UDP socket timeout, in seconds.
     :param int cache_seconds: how many seconds to use a cached result from NTP server
         (default 0, which respects NTP server's minimum).
     :param int retries: extra query attempts after a timeout before raising, since NTP over
-        UDP can silently drop a datagram (default 2, i.e. up to 3 attempts total).
+        UDP can silently drop a datagram (default 2 -- up to 3 attempts total).
 
     """
 
@@ -73,7 +73,6 @@ class NTP:
         self._tz_offset = int(tz_offset * 60 * 60)
         self._socket_timeout = socket_timeout
         self._cache_seconds = cache_seconds
-        # retry PR
         self._retries = retries
 
         # This is our estimated start time for the monotonic clock. We adjust it based on the ntp
@@ -89,7 +88,7 @@ class NTP:
         if self._socket_address is None:
             self._socket_address = self._pool.getaddrinfo(self._server, self._port)[0][4]
 
-        # retry PR
+        # Try to get a UDP response up to retry times
         for attempt in range(self._retries + 1):
             try:
                 self._packet[0] = 0b00100011  # Not leap second, NTP version 4, Client mode
