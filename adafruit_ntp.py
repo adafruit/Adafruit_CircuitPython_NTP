@@ -198,7 +198,7 @@ class NTP:
         """Current time from NTP server. Accessing this property causes the NTP time request,
         unless there has already been a recent request.
 
-        :return: The current UTC time.
+        :return: The current time.
         :rtype: time.struct_time
         """
         if time.monotonic_ns() > self.next_sync:
@@ -211,12 +211,12 @@ class NTP:
 
     @property
     def utc_ns(self) -> int:
-        """UTC (unix epoch) time in nanoseconds. Accessing this property causes the NTP time
+        """Unix epoch time in nanoseconds. Accessing this property causes the NTP time
         request, unless there has already been a recent request. Raises OSError exception if
         no response is received within socket_timeout seconds, ArithmeticError for substantially
         incorrect NTP results.
 
-        :return: UTC time in nanoseconds since the unix epoch.
+        :return: time in nanoseconds since the unix epoch.
         :rtype: int
         """
         if time.monotonic_ns() > self.next_sync:
